@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 Challenges - BeSuccess</title>
+    <meta name="description" content="Relevez 100 défis incroyables et partagez vos exploits avec la communauté BeSuccess">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Écran de chargement -->
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="logo-animation">🏆</div>
+            <h1 class="gold-text">100 Challenges</h1>
+            <p>by BeSuccess</p>
+        </div>
+    </div>
+
+    <!-- App principale -->
+    <div id="app" class="app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <span class="logo-icon">🏆</span>
+                        <span class="logo-text">100 Challenges</span>
+                    </div>
+                    <div class="header-actions">
+                        <button id="langToggle" class="btn-icon" title="Changer de langue">
+                            <span id="currentLang">FR</span>
+                        </button>
+                        <div id="userMenu" class="user-menu hidden">
+                            <button class="user-avatar" id="userAvatar"></button>
+                            <div class="dropdown hidden" id="userDropdown">
+                                <div class="dropdown-item" id="userName"></div>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item" id="logoutBtn">
+                                    <span>🚪</span> Déconnexion
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav" id="mainNav">
+            <div class="container">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-tab="challenges">
+                        <span class="nav-icon">🎯</span>
+                        <span class="nav-label">Défis</span>
+                    </button>
+                    <button class="nav-tab" data-tab="profile">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-label">Profil</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenu principal -->
+        <main class="main">
+            <div class="container">
+                <!-- Tab: Défis -->
+                <div id="challengesTab" class="tab-content active">
+                    <div class="section-header">
+                        <h2>Tous les défis</h2>
+                        <p class="subtitle">Choisissez un défi et partagez votre exploit !</p>
+                    </div>
+                    <div id="challengesList" class="challenges-grid">
+                        <!-- Chargé dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Tab: Profil -->
+                <div id="profileTab" class="tab-content">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar" id="profileAvatar"></div>
+                            <div class="profile-info">
+                                <h2 id="profileName"></h2>
+                                <p id="profileEmail"></p>
+                            </div>
+                        </div>
+                        <div class="profile-stats">
+                            <div class="stat-card">
+                                <div class="stat-value gold-text" id="statChallenges">0</div>
+                                <div class="stat-label">Défis complétés</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value gold-text" id="statPoints">0</div>
+                                <div class="stat-label">Points totaux</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value gold-text" id="statProgress">0%</div>
+                                <div class="stat-label">Progression</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+
+                    <div class="section-header">
+                        <h3>Mes photos</h3>
+                    </div>
+                    <div id="userPhotos" class="photos-grid">
+                        <!-- Chargé dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Auth -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="authTitle">Connexion</h2>
+                <button class="modal-close" id="closeAuthModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="authForm">
+                    <div class="form-group" id="usernameGroup" style="display: none;">
+                        <label for="username">Nom d'utilisateur</label>
+                        <input type="text" id="username" class="form-input" placeholder="Votre nom">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-input" placeholder="votre@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Mot de passe</label>
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="authSubmit">Se connecter</button>
+                </form>
+                <div class="auth-switch">
+                    <span id="authSwitchText">Pas encore de compte ?</span>
+                    <button class="btn-link" id="authSwitchBtn">S'inscrire</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Upload -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Uploader une photo</h2>
+                <button class="modal-close" id="closeUploadModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="uploadChallengeInfo" class="challenge-info"></div>
+                <form id="uploadForm">
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" id="photoFile" accept="image/*" hidden>
+                        <div class="upload-placeholder">
+                            <span class="upload-icon">📸</span>
+                            <p>Glissez-déposez ou cliquez pour sélectionner</p>
+                            <small>Max 5MB - JPG, PNG, GIF, WebP</small>
+                        </div>
+                        <img id="photoPreview" class="photo-preview hidden" alt="Preview">
+                    </div>
+                    <div class="form-group">
+                        <label for="caption">Légende (optionnelle)</label>
+                        <textarea id="caption" class="form-input" rows="3" placeholder="Décrivez votre exploit..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="uploadSubmit">Uploader</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Galerie -->
+    <div id="galleryModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="galleryTitle">Galerie</h2>
+                <button class="modal-close" id="closeGalleryModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="galleryGrid" class="photos-grid">
+                    <!-- Chargé dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Lightbox -->
+    <div id="lightbox" class="lightbox">
+        <button class="lightbox-close" id="closeLightbox">&times;</button>
+        <button class="lightbox-nav lightbox-prev" id="lightboxPrev">‹</button>
+        <button class="lightbox-nav lightbox-next" id="lightboxNext">›</button>
+        <div class="lightbox-content">
+            <img id="lightboxImage" alt="Photo">
+            <div class="lightbox-info">
+                <div class="lightbox-meta">
+                    <span id="lightboxUser"></span>
+                    <span id="lightboxDate"></span>
+                </div>
+                <p id="lightboxCaption"></p>
+                <div class="lightbox-actions">
+                    <button class="btn btn-secondary" id="shareBtn">
+                        <span>🔗</span> Partager
+                    </button>
+                    <button class="btn btn-secondary" id="flagBtn">
+                        <span>🚩</span> Signaler
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

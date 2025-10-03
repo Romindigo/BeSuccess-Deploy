@@ -1,0 +1,32 @@
+{
+  "name": "besuccess",
+  "version": "1.0.0",
+  "description": "BeSuccess - Application de défis communautaires avec modération et partage social",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "start:admin": "node server/admin.js",
+    "dev": "concurrently \"nodemon server/index.js\" \"nodemon server/admin.js\"",
+    "init-db": "node server/database/init.js"
+  },
+  "keywords": ["challenges", "gamification", "community"],
+  "author": "BeSuccess",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "better-sqlite3": "^9.2.2",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.33.1",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.1.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}
