@@ -3,6 +3,8 @@ const API_URL = window.location.origin;
 let currentUser = null;
 let currentLang = 'fr';
 let challenges = [];
+let themes = [];
+let currentThemeId = null; // null = tous les défis
 let currentPhotoIndex = 0;
 let currentPhotos = [];
 let currentChallengeId = null;
@@ -269,22 +271,82 @@ function switchTab(tab) {
 // Challenges
 async function loadChallenges() {
     try {
+        // Charger les thèmes d'abord
+        const themesResponse = await fetch(API_URL + '/api/challenges/themes');
+        themes = await themesResponse.json();
+        
+        // Charger les défis
         const response = await fetch(API_URL + '/api/challenges', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         
         challenges = await response.json();
+        
+        // Afficher les filtres et les défis
+        renderCategoryFilters();
         renderChallenges();
     } catch (error) {
         showToast('Erreur de chargement des défis', 'error');
     }
 }
 
-function renderChallenges() {
-    const container = document.getElementById('challengesList');
+function renderCategoryFilters() {
+    const container = document.getElementById('categoryFilters');
     container.innerHTML = '';
     
-    challenges.forEach(challenge => {
+    // Bouton "Tous"
+    const allButton = document.createElement('button');
+    allButton.className = `category-filter ${currentThemeId === null ? 'active' : ''}`;
+    allButton.innerHTML = `
+        <span>✨ Tous</span>
+        <span class="count">${challenges.length}</span>
+    `;
+    allButton.onclick = () => filterByTheme(null);
+    container.appendChild(allButton);
+    
+    // Boutons pour chaque catégorie
+    themes.forEach(theme => {
+        const count = challenges.filter(c => c.theme_id === theme.id).length;
+        const button = document.createElement('button');
+        button.className = `category-filter ${currentThemeId === theme.id ? 'active' : ''}`;
+        button.innerHTML = `
+            <span>${theme.icon} ${theme.name}</span>
+            <span class="count">${count}</span>
+        `;
+        button.onclick = () => filterByTheme(theme.id);
+        container.appendChild(button);
+    });
+}
+
+function filterByTheme(themeId) {
+    currentThemeId = themeId;
+    renderCategoryFilters();
+    renderChallenges();
+}
+
+function renderChallenges() {
+    const container = document.getElementById('challengesList');
+    const countContainer = document.getElementById('challengesCount');
+    container.innerHTML = '';
+    
+    // Filtrer les défis selon la catégorie sélectionnée
+    const filteredChallenges = currentThemeId === null 
+        ? challenges 
+        : challenges.filter(c => c.theme_id === currentThemeId);
+    
+    // Afficher le compteur
+    const themeName = currentThemeId === null 
+        ? 'Tous les défis' 
+        : themes.find(t => t.id === currentThemeId)?.name || '';
+    countContainer.textContent = `${filteredChallenges.length} défi${filteredChallenges.length > 1 ? 's' : ''} ${themeName ? 'dans "' + themeName + '"' : 'disponibles'}`;
+    
+    // Si aucun défi, afficher un message
+    if (filteredChallenges.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">Aucun défi dans cette catégorie.</p>';
+        return;
+    }
+    
+    filteredChallenges.forEach(challenge => {
         const card = document.createElement('div');
         card.className = `challenge-card ${challenge.completed ? 'completed' : ''}`;
         

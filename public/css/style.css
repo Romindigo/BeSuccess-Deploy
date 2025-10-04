@@ -249,6 +249,58 @@ body {
     color: var(--gray-light);
 }
 
+/* Category Filters */
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 30px 0;
+    justify-content: center;
+    padding: 20px;
+    background: var(--gray-dark);
+    border-radius: 12px;
+}
+
+.category-filter {
+    padding: 12px 24px;
+    border: 2px solid var(--gray-medium);
+    background: transparent;
+    color: var(--white);
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.category-filter:hover {
+    transform: translateY(-2px);
+    border-color: var(--gold);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.category-filter.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--black);
+    font-weight: 600;
+}
+
+.category-filter .count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.category-filter.active .count {
+    background: rgba(0, 0, 0, 0.2);
+}
+
 /* Challenges Grid */
 .challenges-grid {
     display: grid;
