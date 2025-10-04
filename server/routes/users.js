@@ -18,7 +18,7 @@ router.get('/me', authMiddleware, (req, res) => {
                 created_at,
                 last_login,
                 (SELECT COUNT(*) FROM user_progress WHERE user_id = users.id AND completed = 1) as challenges_completed,
-                (SELECT COUNT(DISTINCT challenge_id) FROM challenges) as total_challenges
+                (SELECT COUNT(*) FROM challenges) as total_challenges
             FROM users
             WHERE id = ?
         `).get(req.user.id);
