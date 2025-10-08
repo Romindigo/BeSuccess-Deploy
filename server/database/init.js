@@ -4,7 +4,11 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-const dbPath = process.env.DB_PATH || './server/database/challenges.db';
+// Utiliser le disk persistant sur Render en production
+const dbPath = process.env.DB_PATH || 
+    (process.env.NODE_ENV === 'production' 
+        ? '/data/challenges.db' 
+        : './server/database/challenges.db');
 const schemaPath = path.join(__dirname, 'schema.sql');
 
 // Créer le dossier database s'il n'existe pas
@@ -13,8 +17,11 @@ if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
 }
 
-// Créer le dossier uploads s'il n'existe pas
-const uploadDir = process.env.UPLOAD_DIR || './uploads';
+// Créer le dossier uploads s'il n'existe pas (sur le disk persistant en production)
+const uploadDir = process.env.UPLOAD_DIR || 
+    (process.env.NODE_ENV === 'production' 
+        ? '/data/uploads' 
+        : './uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
