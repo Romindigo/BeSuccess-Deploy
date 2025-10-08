@@ -1,6 +1,11 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 /* Variables - Branding BeSuccess */
 :root {
-    --gold: #D4AF37;
+    --gold: #c1913c;
+    --gold-light: #cba96e;
+    --gold-bright: #e4a910;
     --white: #FFFFFF;
     --black: #000000;
     --gray-dark: #1a1a1a;
@@ -18,7 +23,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--black);
     color: var(--white);
     overflow-x: hidden;
@@ -94,9 +99,10 @@ body {
 }
 
 .logo-text {
+    font-family: 'Akzidenz-Grotesk BQ', 'Akzidenz Grotesk', 'Helvetica Neue', Arial, sans-serif;
     color: var(--gold);
     font-size: 1.5rem;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .sidebar-nav {
@@ -282,7 +288,7 @@ body {
 }
 
 .btn-primary:hover {
-    background: #c9a030;
+    background: var(--gold-bright);
 }
 
 .btn-secondary {
