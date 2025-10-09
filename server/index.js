@@ -27,14 +27,20 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate limiting
+// Rate limiting (désactivé en développement)
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    message: 'Trop de requêtes, veuillez réessayer plus tard'
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000, // 1 minute
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // 1000 requêtes par minute
+    handler: (req, res) => {
+        res.status(429).json({
+            error: 'Trop de requêtes, veuillez réessayer plus tard'
+        });
+    },
+    skip: (req) => process.env.NODE_ENV === 'development' // Skip en dev
 });
 
-app.use('/api/', limiter);
+// Désactiver le rate limiting en local
+// app.use('/api/', limiter);
 
 // Body parser
 app.use(express.json());

@@ -26,14 +26,20 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate limiting plus strict pour l'admin
+// Rate limiting plus strict pour l'admin (désactivé en développement)
 const limiter = rateLimit({
-    windowMs: 900000, // 15 minutes
-    max: 50,
-    message: 'Trop de requêtes admin, veuillez réessayer plus tard'
+    windowMs: 60000, // 1 minute
+    max: 1000, // 1000 requêtes par minute
+    handler: (req, res) => {
+        res.status(429).json({
+            error: 'Trop de requêtes admin, veuillez réessayer plus tard'
+        });
+    },
+    skip: (req) => process.env.NODE_ENV === 'development'
 });
 
-app.use('/api/', limiter);
+// Désactiver le rate limiting en local
+// app.use('/api/', limiter);
 
 // Body parser
 app.use(express.json());

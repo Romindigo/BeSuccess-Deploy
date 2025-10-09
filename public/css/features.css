@@ -401,19 +401,20 @@
     font-size: 18px;
 }
 
-.challenges-grid {
+/* Grille de défis dans les profils - Plus petite pour profils */
+.progress-themes .challenges-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
 }
 
-.challenge-card {
+.progress-themes .challenge-card {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     padding: 15px;
 }
 
-.challenge-card.completed {
+.progress-themes .challenge-card.completed {
     border: 2px solid var(--success-color);
 }
 
@@ -907,10 +908,6 @@
     }
     
     .color-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .challenges-grid {
         grid-template-columns: 1fr;
     }
     
