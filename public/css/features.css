@@ -901,6 +901,47 @@
     margin-top: 5px;
 }
 
+/* ===== THÈME CLAIR ===== */
+body.light-theme .header {
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .challenge-card,
+body.light-theme .photo-card,
+body.light-theme .user-card,
+body.light-theme .profile-card,
+body.light-theme .leaderboard,
+body.light-theme .modal-content {
+    background: #FFFFFF;
+    border: 1px solid #E5E5E5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .challenge-card:hover,
+body.light-theme .user-card:hover {
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+}
+
+body.light-theme .nav {
+    background: #FFFFFF;
+    border-bottom: 2px solid var(--gold);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .comment {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .leaderboard-item {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-theme .theme-toggle-btn {
+    background: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .profile-stats {

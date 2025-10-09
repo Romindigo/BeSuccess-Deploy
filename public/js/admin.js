@@ -112,6 +112,25 @@ function switchSection(section) {
     
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(`${section}Section`).classList.add('active');
+    
+    // Charger l'éditeur de couleurs si section colors
+    if (section === 'colors' && window.ColorSettings) {
+        loadColorEditor();
+    }
+}
+
+// Fonction pour charger l'éditeur de couleurs
+async function loadColorEditor() {
+    const container = document.getElementById('colorEditorContainer');
+    if (!container) return;
+    
+    try {
+        await ColorSettings.loadSettings();
+        ColorSettings.renderColorEditor(container);
+    } catch (error) {
+        console.error('Erreur chargement éditeur:', error);
+        container.innerHTML = '<p style="color: var(--danger-color); padding: 40px; text-align: center;">❌ Erreur de chargement</p>';
+    }
 }
 
 // Stats
