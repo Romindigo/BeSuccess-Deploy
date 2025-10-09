@@ -8,6 +8,7 @@
     "start:admin": "node server/admin.js",
     "dev": "concurrently \"nodemon server/index.js\" \"nodemon server/admin.js\"",
     "init-db": "node server/database/init.js",
+    "migrate": "node server/database/migrate.js",
     "import-defis": "node server/scripts/import-defis.js"
   },
   "keywords": [

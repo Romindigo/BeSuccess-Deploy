@@ -1,6 +1,10 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const authMiddleware = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const sharp = require('sharp');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
@@ -15,6 +19,10 @@ router.get('/me', authMiddleware, (req, res) => {
                 email,
                 username,
                 total_points,
+                avatar_url,
+                bio,
+                location,
+                website,
                 created_at,
                 last_login,
                 (SELECT COUNT(*) FROM user_progress WHERE user_id = users.id AND completed = 1) as challenges_completed,
@@ -29,10 +37,11 @@ router.get('/me', authMiddleware, (req, res) => {
             return res.status(404).json({ error: 'Utilisateur non trouvé' });
         }
         
-        // Calculer la progression en pourcentage
-        user.progress_percentage = user.total_challenges > 0 
-            ? Math.round((user.challenges_completed / user.total_challenges) * 100)
-            : 0;
+        // Calculer la progression sur 100 défis
+        const TARGET_CHALLENGES = 100;
+        user.progress_percentage = Math.min(100, Math.round((user.challenges_completed / TARGET_CHALLENGES) * 100));
+        user.target_challenges = TARGET_CHALLENGES;
+        user.bonus_challenges = user.challenges_completed > TARGET_CHALLENGES ? user.challenges_completed - TARGET_CHALLENGES : 0;
         
         res.json(user);
     } catch (error) {
@@ -97,6 +106,89 @@ router.get('/me/stats', authMiddleware, (req, res) => {
         res.json(stats);
     } catch (error) {
         console.error('Erreur récupération statistiques:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Upload photo de profil
+router.post('/me/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Aucun fichier fourni' });
+        }
+
+        const db = new Database(process.env.DB_PATH || './server/database/challenges.db');
+        
+        // Récupérer l'ancien avatar pour le supprimer
+        const user = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(req.user.id);
+        
+        // Redimensionner l'image en 200x200 pour l'avatar
+        const avatarPath = req.file.path.replace(path.extname(req.file.path), '_avatar' + path.extname(req.file.path));
+        
+        await sharp(req.file.path)
+            .resize(200, 200, { fit: 'cover' })
+            .jpeg({ quality: 90 })
+            .toFile(avatarPath);
+        
+        // Supprimer l'original
+        fs.unlinkSync(req.file.path);
+        
+        // Générer l'URL de l'avatar
+        const avatarUrl = '/uploads/' + path.basename(avatarPath);
+        
+        // Mettre à jour dans la base de données
+        db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, req.user.id);
+        
+        // Supprimer l'ancien avatar si existant
+        if (user.avatar_url && user.avatar_url !== '/images/default-avatar.png') {
+            const oldAvatarPath = path.join(__dirname, '../../uploads', path.basename(user.avatar_url));
+            if (fs.existsSync(oldAvatarPath)) {
+                fs.unlinkSync(oldAvatarPath);
+            }
+        }
+        
+        db.close();
+        
+        res.json({ 
+            message: 'Photo de profil mise à jour',
+            avatar_url: avatarUrl
+        });
+    } catch (error) {
+        console.error('Erreur upload avatar:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// Mettre à jour le profil
+router.put('/me', authMiddleware, (req, res) => {
+    try {
+        const { username, bio, location, website } = req.body;
+        const db = new Database(process.env.DB_PATH || './server/database/challenges.db');
+        
+        // Vérifier que le username n'est pas déjà pris
+        if (username) {
+            const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, req.user.id);
+            if (existing) {
+                db.close();
+                return res.status(400).json({ error: 'Ce nom d\'utilisateur est déjà pris' });
+            }
+        }
+        
+        // Mettre à jour
+        db.prepare(`
+            UPDATE users 
+            SET username = COALESCE(?, username),
+                bio = ?,
+                location = ?,
+                website = ?
+            WHERE id = ?
+        `).run(username, bio || null, location || null, website || null, req.user.id);
+        
+        db.close();
+        
+        res.json({ message: 'Profil mis à jour avec succès' });
+    } catch (error) {
+        console.error('Erreur mise à jour profil:', error);
         res.status(500).json({ error: 'Erreur serveur' });
     }
 });

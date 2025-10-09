@@ -9,7 +9,7 @@ const { sanitizeInput } = require('../utils/validation');
 
 const router = express.Router();
 
-// Upload photo pour un défi
+// Upload photo/vidéo pour un défi
 router.post('/upload/:challengeId', authMiddleware, upload.single('photo'), async (req, res) => {
     try {
         if (!req.file) {
@@ -29,23 +29,34 @@ router.post('/upload/:challengeId', authMiddleware, upload.single('photo'), asyn
             return res.status(404).json({ error: 'Défi non trouvé' });
         }
         
-        // Redimensionner l'image avec Sharp
-        const resizedPath = req.file.path.replace(path.extname(req.file.path), '_resized' + path.extname(req.file.path));
+        // Déterminer le type de média
+        const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+        let thumbnailFilename = null;
         
-        await sharp(req.file.path)
-            .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 85 })
-            .toFile(resizedPath);
+        // Traitement selon le type
+        if (mediaType === 'image') {
+            // Redimensionner l'image avec Sharp
+            const resizedPath = req.file.path.replace(path.extname(req.file.path), '_resized' + path.extname(req.file.path));
+            
+            await sharp(req.file.path)
+                .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 85 })
+                .toFile(resizedPath);
+            
+            // Supprimer l'original et renommer le redimensionné
+            fs.unlinkSync(req.file.path);
+            fs.renameSync(resizedPath, req.file.path);
+        } else {
+            // Pour les vidéos, générer une miniature (optionnel, nécessite ffmpeg)
+            // Pour l'instant, on stocke juste la vidéo
+            thumbnailFilename = null; // TODO: Générer avec ffmpeg si disponible
+        }
         
-        // Supprimer l'original et renommer le redimensionné
-        fs.unlinkSync(req.file.path);
-        fs.renameSync(resizedPath, req.file.path);
-        
-        // Enregistrer la photo en base
+        // Enregistrer le média en base
         const result = db.prepare(`
-            INSERT INTO challenge_photos (challenge_id, user_id, filename, caption, status)
-            VALUES (?, ?, ?, ?, 'visible')
-        `).run(challengeId, req.user.id, req.file.filename, sanitizeInput(caption) || null);
+            INSERT INTO challenge_photos (challenge_id, user_id, filename, caption, status, media_type, thumbnail_filename)
+            VALUES (?, ?, ?, ?, 'visible', ?, ?)
+        `).run(challengeId, req.user.id, req.file.filename, sanitizeInput(caption) || null, mediaType, thumbnailFilename);
         
         const photoId = result.lastInsertRowid;
         
@@ -80,11 +91,13 @@ router.post('/upload/:challengeId', authMiddleware, upload.single('photo'), asyn
         db.close();
         
         res.json({
-            message: 'Photo uploadée avec succès',
+            message: mediaType === 'video' ? 'Vidéo uploadée avec succès' : 'Photo uploadée avec succès',
             photo: {
                 id: photoId,
                 filename: req.file.filename,
-                caption: sanitizeInput(caption) || null
+                caption: sanitizeInput(caption) || null,
+                media_type: mediaType,
+                thumbnail_filename: thumbnailFilename
             }
         });
     } catch (error) {
@@ -107,8 +120,12 @@ router.get('/challenge/:challengeId', (req, res) => {
                 cp.filename,
                 cp.caption,
                 cp.created_at,
+                cp.media_type,
+                cp.thumbnail_filename,
                 u.username,
-                u.id as user_id
+                u.id as user_id,
+                (SELECT COUNT(*) FROM photo_likes WHERE photo_id = cp.id) as likes_count,
+                (SELECT COUNT(*) FROM comments WHERE photo_id = cp.id AND status = 'visible') as comments_count
             FROM challenge_photos cp
             JOIN users u ON cp.user_id = u.id
             WHERE cp.challenge_id = ? AND cp.status = 'visible'

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Sortie de zone de confort</title>
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/features.css">
 </head>
 <body>
     <!-- Login Admin -->
@@ -52,6 +53,9 @@
                 </button>
                 <button class="nav-item" data-section="audit">
                     <span>📋</span> Audit
+                </button>
+                <button class="nav-item" data-section="colors">
+                    <span>🎨</span> Couleurs
                 </button>
             </nav>
             <button class="nav-item logout-btn" id="adminLogout">
@@ -172,12 +176,19 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Colors Section -->
+            <section id="colorsSection" class="section">
+                <div id="colorEditorContainer"></div>
+            </section>
         </main>
     </div>
 
     <!-- Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
 
+    <script src="/js/color-settings.js"></script>
     <script src="/js/admin.js"></script>
+    <script src="/js/admin-features.js"></script>
 </body>
 </html>
