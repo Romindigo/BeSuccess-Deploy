@@ -67,6 +67,10 @@
                         <span class="nav-icon">🏆</span>
                         <span class="nav-label">Classement</span>
                     </button>
+                    <button class="nav-tab" data-tab="groups">
+                        <span class="nav-icon">💬</span>
+                        <span class="nav-label">Groupes</span>
+                    </button>
                 </div>
             </div>
         </nav>
@@ -150,6 +154,18 @@
                         <h3>Mes photos</h3>
                     </div>
                     <div id="userPhotos" class="photos-grid">
+                        <!-- Chargé dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Tab: Groupes -->
+                <div id="groupsTab" class="tab-content">
+                    <div class="section-header">
+                        <h2>💬 Groupes de Discussion</h2>
+                        <p class="subtitle">Rejoignez des groupes et discutez avec la communauté</p>
+                    </div>
+                    
+                    <div id="groupsContainer">
                         <!-- Chargé dynamiquement -->
                     </div>
                 </div>
@@ -267,6 +283,7 @@
     <script src="/js/social.js"></script>
     <script src="/js/profile-editor.js"></script>
     <script src="/js/profile-enhancements.js"></script>
+    <script src="/js/groups.js"></script>
     <script src="/js/app.js"></script>
     <script src="/js/app-features.js"></script>
 </body>

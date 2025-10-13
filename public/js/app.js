@@ -266,6 +266,10 @@ function switchTab(tab) {
         loadProfile();
         loadUserPhotos();
     }
+    
+    if (tab === 'groups' && typeof initGroups === 'function') {
+        initGroups();
+    }
 }
 
 // Challenges
