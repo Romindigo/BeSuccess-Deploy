@@ -44,6 +44,9 @@ function setupEventListeners() {
             document.getElementById(`${content}Content`).classList.add('active');
         });
     });
+    
+    // Add group button
+    document.getElementById('addGroupBtn')?.addEventListener('click', showCreateGroupModal);
 }
 
 // Auth
@@ -116,6 +119,11 @@ function switchSection(section) {
     // Charger l'éditeur de couleurs si section colors
     if (section === 'colors' && window.ColorSettings) {
         loadColorEditor();
+    }
+    
+    // Charger les groupes si section groups
+    if (section === 'groups') {
+        loadGroups();
     }
 }
 
@@ -536,6 +544,397 @@ async function loadAudit() {
         });
     } catch (error) {
         showToast('Erreur de chargement de l\'audit', 'error');
+    }
+}
+
+// Groups Management
+function showCreateGroupModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Créer un nouveau groupe</h2>
+            <form id="createGroupForm">
+                <div class="form-group">
+                    <label>Nom du groupe *</label>
+                    <input type="text" class="form-input" name="name" required placeholder="Ex: Motivation quotidienne">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-input" name="description" rows="3" placeholder="Description du groupe..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Icône</label>
+                    <input type="text" class="form-input" name="icon" value="💬" placeholder="💬">
+                    <small style="color: var(--gray-light);">Utilisez un emoji pour l'icône du groupe</small>
+                </div>
+                <div class="form-group">
+                    <label>Couleur</label>
+                    <input type="color" class="form-input" name="color" value="#D4AF37">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="is_public" checked>
+                        Groupe public (accessible à tous)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Nombre maximum de membres (0 = illimité)</label>
+                    <input type="number" class="form-input" name="max_members" value="0" min="0">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">✨ Créer le groupe</button>
+                    <button type="button" class="btn" onclick="this.closest('.modal').remove()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        try {
+            const response = await fetch(API_URL + '/api/admin/groups', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({
+                    name: formData.get('name'),
+                    description: formData.get('description'),
+                    icon: formData.get('icon'),
+                    color: formData.get('color'),
+                    is_public: formData.get('is_public') === 'on',
+                    max_members: parseInt(formData.get('max_members'))
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.error);
+            
+            showToast('Groupe créé avec succès', 'success');
+            modal.remove();
+            loadGroups();
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
+}
+
+async function loadGroups() {
+    try {
+        const response = await fetch(API_URL + '/api/admin/groups', {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const groups = await response.json();
+        renderGroups(groups);
+        
+        // Load stats
+        const statsResponse = await fetch(API_URL + '/api/admin/groups/stats/overview', {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        const stats = await statsResponse.json();
+        renderGroupStats(stats);
+    } catch (error) {
+        showToast('Erreur de chargement des groupes', 'error');
+    }
+}
+
+function renderGroupStats(stats) {
+    const container = document.getElementById('groupsStats');
+    container.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-info">
+                <div class="stat-value">${stats.total_groups}</div>
+                <div class="stat-label">Groupes totaux</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+                <div class="stat-value">${stats.total_members}</div>
+                <div class="stat-label">Membres</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📨</div>
+            <div class="stat-info">
+                <div class="stat-value">${stats.total_messages}</div>
+                <div class="stat-label">Messages</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🌍</div>
+            <div class="stat-info">
+                <div class="stat-value">${stats.public_groups}</div>
+                <div class="stat-label">Publics</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🔒</div>
+            <div class="stat-info">
+                <div class="stat-value">${stats.private_groups}</div>
+                <div class="stat-label">Privés</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderGroups(groups) {
+    const container = document.getElementById('groupsList');
+    
+    if (groups.length === 0) {
+        container.innerHTML = '<p style="color: var(--gray-light); padding: 2rem; text-align: center;">Aucun groupe créé</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Groupe</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Membres</th>
+                        <th>Messages</th>
+                        <th>Créateur</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${groups.map(group => `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 1.5rem;">${group.icon}</span>
+                                    <strong style="color: ${group.color};">${group.name}</strong>
+                                </div>
+                            </td>
+                            <td><small>${group.description || '-'}</small></td>
+                            <td>
+                                <span class="badge ${group.is_public ? 'badge-success' : 'badge-warning'}">
+                                    ${group.is_public ? '🌍 Public' : '🔒 Privé'}
+                                </span>
+                            </td>
+                            <td>${group.members_count}${group.max_members > 0 ? `/${group.max_members}` : ''}</td>
+                            <td>${group.messages_count}</td>
+                            <td>${group.creator_name}</td>
+                            <td>
+                                <button class="btn btn-sm" onclick="viewGroupDetails(${group.id})">👁️ Voir</button>
+                                <button class="btn btn-sm" onclick="editGroup(${group.id})">✏️ Éditer</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteGroup(${group.id}, '${group.name.replace(/'/g, "\\'")}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function viewGroupDetails(groupId) {
+    try {
+        const response = await fetch(API_URL + `/api/admin/groups/${groupId}`, {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const group = await response.json();
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0;">
+                        <span style="font-size: 2rem; margin-right: 0.5rem;">${group.icon}</span>
+                        ${group.name}
+                    </h2>
+                    <button class="btn btn-sm" onclick="this.closest('.modal').remove()">✕</button>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <p><strong>Description:</strong> ${group.description || 'Aucune description'}</p>
+                    <p><strong>Type:</strong> ${group.is_public ? '🌍 Public' : '🔒 Privé'}</p>
+                    <p><strong>Créateur:</strong> ${group.creator_name}</p>
+                    <p><strong>Créé le:</strong> ${new Date(group.created_at).toLocaleDateString('fr-FR')}</p>
+                    <p><strong>Membres:</strong> ${group.members_count}${group.max_members > 0 ? `/${group.max_members}` : ''}</p>
+                    <p><strong>Messages:</strong> ${group.messages_count}</p>
+                </div>
+                
+                <h3>Membres (${group.members.length})</h3>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Rôle</th>
+                                <th>Rejoint le</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${group.members.map(member => `
+                                <tr>
+                                    <td>${member.username}</td>
+                                    <td><span class="badge ${member.role === 'admin' ? 'badge-danger' : member.role === 'moderator' ? 'badge-warning' : 'badge-info'}">${member.role}</span></td>
+                                    <td>${new Date(member.joined_at).toLocaleDateString('fr-FR')}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" onclick="removeGroupMember(${groupId}, ${member.id}, '${member.username.replace(/'/g, "\\'")}')">Retirer</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+    } catch (error) {
+        showToast('Erreur de chargement des détails', 'error');
+    }
+}
+
+async function editGroup(groupId) {
+    try {
+        const response = await fetch(API_URL + `/api/admin/groups/${groupId}`, {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const group = await response.json();
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Modifier le groupe</h2>
+                <form id="editGroupForm">
+                    <div class="form-group">
+                        <label>Nom du groupe</label>
+                        <input type="text" class="form-input" name="name" value="${group.name}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="form-input" name="description" rows="3">${group.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <input type="text" class="form-input" name="icon" value="${group.icon}" placeholder="💬">
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur</label>
+                        <input type="color" class="form-input" name="color" value="${group.color}">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="is_public" ${group.is_public ? 'checked' : ''}>
+                            Groupe public
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre maximum de membres (0 = illimité)</label>
+                        <input type="number" class="form-input" name="max_members" value="${group.max_members}" min="0">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
+                        <button type="button" class="btn" onclick="this.closest('.modal').remove()">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+        
+        document.getElementById('editGroupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(API_URL + `/api/admin/groups/${groupId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        description: formData.get('description'),
+                        icon: formData.get('icon'),
+                        color: formData.get('color'),
+                        is_public: formData.get('is_public') === 'on',
+                        max_members: parseInt(formData.get('max_members'))
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error);
+                
+                showToast('Groupe modifié avec succès', 'success');
+                modal.remove();
+                loadGroups();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+    } catch (error) {
+        showToast('Erreur de chargement du groupe', 'error');
+    }
+}
+
+async function deleteGroup(groupId, groupName) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le groupe "${groupName}" ?\nToutes les données associées seront supprimées.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL + `/api/admin/groups/${groupId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error);
+        
+        showToast('Groupe supprimé', 'success');
+        loadGroups();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+async function removeGroupMember(groupId, memberId, username) {
+    if (!confirm(`Retirer ${username} du groupe ?`)) return;
+    
+    try {
+        const response = await fetch(API_URL + `/api/admin/groups/${groupId}/members/${memberId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error);
+        
+        showToast('Membre retiré', 'success');
+        
+        // Fermer et rouvrir le modal pour rafraîchir
+        document.querySelector('.modal')?.remove();
+        viewGroupDetails(groupId);
+    } catch (error) {
+        showToast(error.message, 'error');
     }
 }
 

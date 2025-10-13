@@ -12,6 +12,7 @@ const usersRoutes = require('./routes/users');
 const commentsRoutes = require('./routes/comments');
 const socialRoutes = require('./routes/social');
 const settingsRoutes = require('./routes/settings');
+const groupsRoutes = require('./routes/groups');
 
 const app = express();
 const PORT = process.env.USER_PORT || 3000;
@@ -58,6 +59,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/groups', groupsRoutes);
 
 // Route pour le partage social avec OG tags
 app.get('/p/:photoId', async (req, res) => {

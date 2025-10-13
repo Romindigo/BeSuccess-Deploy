@@ -10,6 +10,7 @@ const adminUsersRoutes = require('./routes/admin/users');
 const adminPhotosRoutes = require('./routes/admin/photos');
 const adminDashboardRoutes = require('./routes/admin/dashboard');
 const adminContentRoutes = require('./routes/admin/content');
+const adminGroupsRoutes = require('./routes/admin/groups');
 const settingsRoutes = require('./routes/settings');
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/admin/users', adminUsersRoutes);
 app.use('/api/admin/photos', adminPhotosRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/content', adminContentRoutes);
+app.use('/api/admin/groups', adminGroupsRoutes);
 app.use('/api/settings', settingsRoutes);
 
 // Servir la page admin

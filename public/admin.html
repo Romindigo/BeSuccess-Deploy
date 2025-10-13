@@ -51,6 +51,9 @@
                 <button class="nav-item" data-section="content">
                     <span>📝</span> Contenu
                 </button>
+                <button class="nav-item" data-section="groups">
+                    <span>💬</span> Groupes
+                </button>
                 <button class="nav-item" data-section="audit">
                     <span>📋</span> Audit
                 </button>
@@ -156,6 +159,18 @@
                     <button class="btn btn-primary" id="addChallengeBtn">+ Nouveau défi</button>
                     <div id="challengesList"></div>
                 </div>
+            </section>
+
+            <!-- Groups Section -->
+            <section id="groupsSection" class="section">
+                <div class="section-header">
+                    <h2>Gestion des groupes de discussion</h2>
+                    <button class="btn btn-primary" id="addGroupBtn">+ Nouveau groupe</button>
+                </div>
+                <div id="groupsStats" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
+                    <!-- Stats will be loaded here -->
+                </div>
+                <div id="groupsList"></div>
             </section>
 
             <!-- Audit Section -->
