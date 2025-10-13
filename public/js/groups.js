@@ -11,7 +11,7 @@ function initGroups() {
 // Charger tous les groupes publics
 async function loadAllGroups() {
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         if (!token) return;
 
         const response = await fetch(API_URL + '/api/groups', {
@@ -30,7 +30,7 @@ async function loadAllGroups() {
 // Charger mes groupes
 async function loadMyGroups() {
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         if (!token) return;
 
         const response = await fetch(API_URL + '/api/groups/my-groups', {
@@ -103,7 +103,7 @@ function renderGroupCard(group, isMember) {
 // Rejoindre un groupe
 async function joinGroup(groupId) {
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         const response = await fetch(API_URL + `/api/groups/${groupId}/join`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
@@ -125,7 +125,7 @@ async function openGroupModal(groupId) {
     currentGroupId = groupId;
 
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
 
         const [groupRes, membersRes, messagesRes] = await Promise.all([
             fetch(API_URL + `/api/groups/${groupId}`, {
@@ -246,7 +246,7 @@ async function sendGroupMessage() {
     if (!content || !currentGroupId) return;
 
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         const response = await fetch(API_URL + `/api/groups/${currentGroupId}/messages`, {
             method: 'POST',
             headers: {
@@ -274,7 +274,7 @@ async function sendGroupMessage() {
 // Réagir à un message
 async function reactToMessage(messageId, emoji) {
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         const response = await fetch(API_URL + `/api/groups/messages/${messageId}/react`, {
             method: 'POST',
             headers: {
@@ -297,7 +297,7 @@ async function leaveGroup(groupId) {
     if (!confirm('Êtes-vous sûr de vouloir quitter ce groupe ?')) return;
 
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         const response = await fetch(API_URL + `/api/groups/${groupId}/leave`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
