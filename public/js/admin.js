@@ -42,8 +42,19 @@ function setupEventListeners() {
             document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById(`${content}Content`).classList.add('active');
+            
+            // Charger le contenu correspondant
+            if (content === 'themes') {
+                loadThemes();
+            } else if (content === 'challenges') {
+                loadChallengesAdmin();
+            }
         });
     });
+    
+    // Content buttons
+    document.getElementById('addThemeBtn')?.addEventListener('click', showCreateThemeModal);
+    document.getElementById('addChallengeBtn')?.addEventListener('click', showCreateChallengeModal);
     
     // Add group button
     document.getElementById('addGroupBtn')?.addEventListener('click', showCreateGroupModal);
@@ -116,9 +127,9 @@ function switchSection(section) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(`${section}Section`).classList.add('active');
     
-    // Charger l'éditeur de couleurs si section colors
-    if (section === 'colors' && window.ColorSettings) {
-        loadColorEditor();
+    // Charger le contenu si section content
+    if (section === 'content') {
+        loadThemes();
     }
     
     // Charger les groupes si section groups
@@ -569,10 +580,6 @@ function showCreateGroupModal() {
                     <small style="color: var(--gray-light);">Utilisez un emoji pour l'icône du groupe</small>
                 </div>
                 <div class="form-group">
-                    <label>Couleur</label>
-                    <input type="color" class="form-input" name="color" value="#D4AF37">
-                </div>
-                <div class="form-group">
                     <label>
                         <input type="checkbox" name="is_public" checked>
                         Groupe public (accessible à tous)
@@ -608,7 +615,7 @@ function showCreateGroupModal() {
                     name: formData.get('name'),
                     description: formData.get('description'),
                     icon: formData.get('icon'),
-                    color: formData.get('color'),
+                    color: '#D4AF37',
                     is_public: formData.get('is_public') === 'on',
                     max_members: parseInt(formData.get('max_members'))
                 })
@@ -832,10 +839,6 @@ async function editGroup(groupId) {
                         <input type="text" class="form-input" name="icon" value="${group.icon}" placeholder="💬">
                     </div>
                     <div class="form-group">
-                        <label>Couleur</label>
-                        <input type="color" class="form-input" name="color" value="${group.color}">
-                    </div>
-                    <div class="form-group">
                         <label>
                             <input type="checkbox" name="is_public" ${group.is_public ? 'checked' : ''}>
                             Groupe public
@@ -871,7 +874,6 @@ async function editGroup(groupId) {
                         name: formData.get('name'),
                         description: formData.get('description'),
                         icon: formData.get('icon'),
-                        color: formData.get('color'),
                         is_public: formData.get('is_public') === 'on',
                         max_members: parseInt(formData.get('max_members'))
                     })
@@ -964,8 +966,519 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+// ========== GESTION DES THÉMATIQUES ET DÉFIS ==========
+
+// Charger les thématiques
+async function loadThemes() {
+    try {
+        const response = await fetch(API_URL + '/api/challenges/themes');
+        const themes = await response.json();
+        renderThemes(themes);
+    } catch (error) {
+        showToast('Erreur de chargement des thématiques', 'error');
+    }
+}
+
+// Afficher les thématiques
+function renderThemes(themes) {
+    const container = document.getElementById('themesList');
+    if (!container) return;
+    
+    if (themes.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--gray-light); padding: 2rem;">Aucune thématique</p>';
+        return;
+    }
+    
+    container.innerHTML = themes.map(theme => `
+        <div class="challenge-card" style="border-color: ${theme.color};">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h3 style="color: ${theme.color}; margin-bottom: 0.5rem;">
+                        <span style="font-size: 1.5rem; margin-right: 0.5rem;">${theme.icon}</span>
+                        ${theme.name}
+                    </h3>
+                    <p style="color: var(--gray-light); margin-bottom: 1rem;">${theme.description || 'Aucune description'}</p>
+                    <small style="color: var(--gray-light);">Couleur: ${theme.color}</small>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary" onclick="editTheme(${theme.id})" title="Modifier">✏️</button>
+                    <button class="btn btn-secondary" onclick="deleteTheme(${theme.id}, '${theme.name}')" title="Supprimer" style="background: var(--error);">🗑️</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Modal création thématique
+function showCreateThemeModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Créer une thématique</h2>
+            <form id="createThemeForm">
+                <div class="form-group">
+                    <label>Nom *</label>
+                    <input type="text" class="form-input" name="name" required placeholder="Ex: Aventure">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-input" name="description" rows="3" placeholder="Description de la thématique..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Icône (emoji) *</label>
+                    <input type="text" class="form-input" name="icon" required placeholder="🎯" maxlength="2">
+                </div>
+                <div class="form-group">
+                    <label>Couleur *</label>
+                    <input type="color" class="form-input" name="color" value="#D4AF37">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">✨ Créer</button>
+                    <button type="button" class="btn" onclick="this.closest('.modal').remove()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    document.getElementById('createThemeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        try {
+            const response = await fetch(API_URL + '/api/admin/content/themes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                },
+                body: JSON.stringify({
+                    name: formData.get('name'),
+                    description: formData.get('description'),
+                    icon: formData.get('icon'),
+                    color: formData.get('color')
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.error);
+            
+            showToast('Thématique créée avec succès', 'success');
+            modal.remove();
+            loadThemes();
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    });
+}
+
+// Modifier une thématique
+async function editTheme(themeId) {
+    try {
+        const response = await fetch(API_URL + `/api/challenges/themes`);
+        const themes = await response.json();
+        const theme = themes.find(t => t.id === themeId);
+        
+        if (!theme) throw new Error('Thématique non trouvée');
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Modifier la thématique</h2>
+                <form id="editThemeForm">
+                    <div class="form-group">
+                        <label>Nom *</label>
+                        <input type="text" class="form-input" name="name" value="${theme.name}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="form-input" name="description" rows="3">${theme.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Icône (emoji) *</label>
+                        <input type="text" class="form-input" name="icon" value="${theme.icon}" required maxlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur *</label>
+                        <input type="color" class="form-input" name="color" value="${theme.color}">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
+                        <button type="button" class="btn" onclick="this.closest('.modal').remove()">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+        
+        document.getElementById('editThemeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(API_URL + `/api/admin/content/themes/${themeId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        description: formData.get('description'),
+                        icon: formData.get('icon'),
+                        color: formData.get('color')
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error);
+                
+                showToast('Thématique modifiée avec succès', 'success');
+                modal.remove();
+                loadThemes();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+    } catch (error) {
+        showToast('Erreur de chargement de la thématique', 'error');
+    }
+}
+
+// Supprimer une thématique
+async function deleteTheme(themeId, themeName) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la thématique "${themeName}" ?\nCette action est irréversible.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL + `/api/admin/content/themes/${themeId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error);
+        
+        showToast('Thématique supprimée', 'success');
+        loadThemes();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// Charger les défis
+async function loadChallengesAdmin() {
+    try {
+        const [challengesRes, themesRes] = await Promise.all([
+            fetch(API_URL + '/api/challenges'),
+            fetch(API_URL + '/api/challenges/themes')
+        ]);
+        
+        const challenges = await challengesRes.json();
+        const themes = await themesRes.json();
+        
+        renderChallenges(challenges, themes);
+    } catch (error) {
+        showToast('Erreur de chargement des défis', 'error');
+    }
+}
+
+// Afficher les défis
+function renderChallenges(challenges, themes) {
+    const container = document.getElementById('challengesList');
+    if (!container) return;
+    
+    if (challenges.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--gray-light); padding: 2rem;">Aucun défi</p>';
+        return;
+    }
+    
+    // Grouper par thématique
+    const byTheme = {};
+    challenges.forEach(challenge => {
+        if (!byTheme[challenge.theme_id]) {
+            byTheme[challenge.theme_id] = [];
+        }
+        byTheme[challenge.theme_id].push(challenge);
+    });
+    
+    container.innerHTML = Object.entries(byTheme).map(([themeId, themeChallenges]) => {
+        const theme = themes.find(t => t.id == themeId);
+        if (!theme) return '';
+        
+        return `
+            <div style="margin-bottom: 2rem;">
+                <h3 style="color: ${theme.color}; margin-bottom: 1rem;">
+                    <span style="font-size: 1.5rem; margin-right: 0.5rem;">${theme.icon}</span>
+                    ${theme.name}
+                </h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Description</th>
+                                <th>Difficulté</th>
+                                <th>Points</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${themeChallenges.map(challenge => `
+                                <tr>
+                                    <td>${challenge.title}</td>
+                                    <td><small>${challenge.description}</small></td>
+                                    <td>
+                                        <span class="badge" style="background: ${getDifficultyColor(challenge.difficulty)};">
+                                            ${'⭐'.repeat(challenge.difficulty)}
+                                        </span>
+                                    </td>
+                                    <td>${challenge.points} pts</td>
+                                    <td>
+                                        <button class="btn btn-secondary" onclick="editChallenge(${challenge.id})" title="Modifier">✏️</button>
+                                        <button class="btn btn-secondary" onclick="deleteChallenge(${challenge.id}, '${challenge.title}')" title="Supprimer" style="background: var(--error);">🗑️</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getDifficultyColor(difficulty) {
+    const colors = {
+        1: '#10B981',
+        2: '#3B82F6',
+        3: '#F59E0B',
+        4: '#EF4444',
+        5: '#8B5CF6'
+    };
+    return colors[difficulty] || '#666';
+}
+
+// Modal création défi
+async function showCreateChallengeModal() {
+    try {
+        const response = await fetch(API_URL + '/api/challenges/themes');
+        const themes = await response.json();
+        
+        if (themes.length === 0) {
+            showToast('Créez d\'abord une thématique', 'warning');
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Créer un défi</h2>
+                <form id="createChallengeForm">
+                    <div class="form-group">
+                        <label>Thématique *</label>
+                        <select class="form-input" name="theme_id" required>
+                            ${themes.map(theme => `
+                                <option value="${theme.id}">${theme.icon} ${theme.name}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Titre *</label>
+                        <input type="text" class="form-input" name="title" required placeholder="Ex: Parler à un inconnu">
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea class="form-input" name="description" rows="3" required placeholder="Description du défi..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulté (1-5) *</label>
+                        <input type="number" class="form-input" name="difficulty" min="1" max="5" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Points *</label>
+                        <input type="number" class="form-input" name="points" min="1" value="10" required>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary">✨ Créer</button>
+                        <button type="button" class="btn" onclick="this.closest('.modal').remove()">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+        
+        document.getElementById('createChallengeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(API_URL + '/api/admin/content/challenges', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({
+                        theme_id: parseInt(formData.get('theme_id')),
+                        title: formData.get('title'),
+                        description: formData.get('description'),
+                        difficulty: parseInt(formData.get('difficulty')),
+                        points: parseInt(formData.get('points'))
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error);
+                
+                showToast('Défi créé avec succès', 'success');
+                modal.remove();
+                loadChallengesAdmin();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+    } catch (error) {
+        showToast('Erreur de chargement des thématiques', 'error');
+    }
+}
+
+// Modifier un défi
+async function editChallenge(challengeId) {
+    try {
+        const [challengesRes, themesRes] = await Promise.all([
+            fetch(API_URL + '/api/challenges'),
+            fetch(API_URL + '/api/challenges/themes')
+        ]);
+        
+        const challenges = await challengesRes.json();
+        const themes = await themesRes.json();
+        const challenge = challenges.find(c => c.id === challengeId);
+        
+        if (!challenge) throw new Error('Défi non trouvé');
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Modifier le défi</h2>
+                <form id="editChallengeForm">
+                    <div class="form-group">
+                        <label>Thématique *</label>
+                        <select class="form-input" name="theme_id" required disabled>
+                            ${themes.map(theme => `
+                                <option value="${theme.id}" ${theme.id == challenge.theme_id ? 'selected' : ''}>
+                                    ${theme.icon} ${theme.name}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <small style="color: var(--gray-light);">La thématique ne peut pas être modifiée</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Titre *</label>
+                        <input type="text" class="form-input" name="title" value="${challenge.title}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea class="form-input" name="description" rows="3" required>${challenge.description}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulté (1-5) *</label>
+                        <input type="number" class="form-input" name="difficulty" min="1" max="5" value="${challenge.difficulty}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Points *</label>
+                        <input type="number" class="form-input" name="points" min="1" value="${challenge.points}" required>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
+                        <button type="button" class="btn" onclick="this.closest('.modal').remove()">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+        
+        document.getElementById('editChallengeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(API_URL + `/api/admin/content/challenges/${challengeId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({
+                        title: formData.get('title'),
+                        description: formData.get('description'),
+                        difficulty: parseInt(formData.get('difficulty')),
+                        points: parseInt(formData.get('points'))
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error);
+                
+                showToast('Défi modifié avec succès', 'success');
+                modal.remove();
+                loadChallengesAdmin();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+    } catch (error) {
+        showToast('Erreur de chargement du défi', 'error');
+    }
+}
+
+// Supprimer un défi
+async function deleteChallenge(challengeId, challengeTitle) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le défi "${challengeTitle}" ?\nCette action est irréversible.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL + `/api/admin/content/challenges/${challengeId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error);
+        
+        showToast('Défi supprimé', 'success');
+        loadChallengesAdmin();
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
 // Rendre les fonctions accessibles globalement pour les onclick
 window.viewGroupDetails = viewGroupDetails;
 window.editGroup = editGroup;
 window.deleteGroup = deleteGroup;
 window.removeGroupMember = removeGroupMember;
+window.editTheme = editTheme;
+window.deleteTheme = deleteTheme;
+window.editChallenge = editChallenge;
+window.deleteChallenge = deleteChallenge;
