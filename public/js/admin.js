@@ -963,3 +963,9 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// Rendre les fonctions accessibles globalement pour les onclick
+window.viewGroupDetails = viewGroupDetails;
+window.editGroup = editGroup;
+window.deleteGroup = deleteGroup;
+window.removeGroupMember = removeGroupMember;
