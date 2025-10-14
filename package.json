@@ -9,7 +9,14 @@
     "dev": "concurrently \"nodemon server/index.js\" \"nodemon server/admin.js\"",
     "init-db": "node server/database/init.js",
     "migrate": "node server/database/migrate.js",
-    "import-defis": "node server/scripts/import-defis.js"
+    "import-defis": "node server/scripts/import-defis.js",
+    "start:prod": "pm2 start ecosystem.config.js",
+    "stop:prod": "pm2 stop all",
+    "restart:prod": "pm2 restart all",
+    "logs": "pm2 logs",
+    "status": "pm2 status",
+    "deploy": "./deploy.sh",
+    "backup": "./backup.sh"
   },
   "keywords": [
     "challenges",
